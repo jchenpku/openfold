@@ -21,7 +21,6 @@ from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtensio
 
 from scripts.utils import get_nvidia_cc
 
-
 version_dependent_macros = [
     '-DVERSION_GE_1_1',
     '-DVERSION_GE_1_3',
@@ -29,7 +28,7 @@ version_dependent_macros = [
 ]
 
 extra_cuda_flags = [
-    '-std=c++14',
+    '-std=c++17',  # Updated to C++17 for PyTorch compatibility
     '-maxrregcount=50',
     '-U__CUDA_NO_HALF_OPERATORS__',
     '-U__CUDA_NO_HALF_CONVERSIONS__',
@@ -38,7 +37,7 @@ extra_cuda_flags = [
 ]
 
 def get_cuda_bare_metal_version(cuda_dir):
-    if cuda_dir==None or torch.version.cuda==None:
+    if cuda_dir is None or torch.version.cuda is None:
         print("CUDA is not found, cpu version is installed")
         return None, -1, 0
     else:
@@ -52,9 +51,9 @@ def get_cuda_bare_metal_version(cuda_dir):
         return raw_output, bare_metal_major, bare_metal_minor
 
 compute_capabilities = set([
-    (3, 7), # K80, e.g.
-    (5, 2), # Titan X
-    (6, 1), # GeForce 1000-series
+    (3, 7),  # K80, e.g.
+    (5, 2),  # Titan X
+    (6, 1),  # GeForce 1000-series
 ])
 
 compute_capabilities.add((7, 0))
@@ -75,8 +74,6 @@ for major, minor in list(compute_capabilities):
 
 extra_cuda_flags += cc_flag
 
-cc_flag = ['-gencode', 'arch=compute_70,code=sm_70']
-
 if bare_metal_major != -1:
     modules = [CUDAExtension(
         name="attn_core_inplace_cuda",
@@ -91,7 +88,7 @@ if bare_metal_major != -1:
             )
         ],
         extra_compile_args={
-            'cxx': ['-O3'] + version_dependent_macros,
+            'cxx': ['-O3', '-std=c++17'] + version_dependent_macros,  # Added -std=c++17 for host compiler
             'nvcc': (
                 ['-O3', '--use_fast_math'] +
                 version_dependent_macros +
@@ -107,7 +104,7 @@ else:
             "openfold/utils/kernel/csrc/softmax_cuda_stub.cpp",
         ],
         extra_compile_args={
-            'cxx': ['-O3'],
+            'cxx': ['-O3', '-std=c++17'],  # Added -std=c++17 for consistency
         }
     )]
 
@@ -130,7 +127,7 @@ setup(
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python :: 3.9,'
+        'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
 )
